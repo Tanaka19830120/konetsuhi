@@ -37,41 +37,45 @@ for idx, col in enumerate([col1, col2]):
         days_c    = st.number_input(f"[{name}] 冷房日数",0,365,90,step=1,key=f"dc_{idx}")
 
         # 太陽光・蓄電池
-        sol_cap = st.number_input(f"[{name}] 太陽光容量 (kW)",0.0,100.0,0.0,step=0.1,key=f"sol_{idx}")
-        bat_cap = st.number_input(f"[{name}] 蓄電池容量 (kWh)",0.0,1000.0,0.0,step=0.1,key=f"bat_{idx}")
-        bat_eff = st.slider(f"[{name}] 蓄電池効率 (%)",0,100,90,key=f"beff_{idx}")/100.0
+        sol_cap = st.number_input(f"[{name}] 太陽光容量 (kW)",    min_value=0.0, max_value=100.0, value=0.0, step=0.1, key=f"sol_{idx}")
+        bat_cap = st.number_input(f"[{name}] 蓄電池容量 (kWh)",   min_value=0.0, max_value=1000.0, value=0.0, step=0.1, key=f"bat_{idx}")
+        bat_eff = st.slider(f"[{name}] 蓄電池効率 (%)",           min_value=0, max_value=100, value=90, key=f"beff_{idx}") / 100.0
 
         # 定数
-        hrs = 24.0; vent_rate=0.5; rho=1.2; c_air=0.33; gen_h=3.5
+        hrs = 24.0
+        vent_rate = 0.5
+        rho = 1.2
+        c_air = 0.33
+        gen_h = 3.5
 
-        # 熱損失
-        Qsw = Ua*floor_area*dTw*hrs*days_h/1000
-        Qss = Ua*floor_area*dTs*hrs*days_c/1000
-        hlr = (1-rec_rate) if vent_type=="第一種" else 1.0
-        Qvw = vent_rate*volume*rho*c_air*dTw*hlr*hrs*days_h/1000
-        Qvs = vent_rate*volume*rho*c_air*dTs*hlr*hrs*days_c/1000
+        # 熱損失計算
+        Qsw = Ua * floor_area * dTw * hrs * days_h / 1000
+        Qss = Ua * floor_area * dTs * hrs * days_c / 1000
+        hlr = (1 - rec_rate) if vent_type == "第一種" else 1.0
+        Qvw = vent_rate * volume * rho * c_air * dTw * hlr * hrs * days_h / 1000
+        Qvs = vent_rate * volume * rho * c_air * dTs * hlr * hrs * days_c / 1000
         lf = 0.5 if dense else 1.0
-        leakv = Cval*floor_area*wind_spd*lf/100
-        Qlw = leakv*rho*c_air*dTw*hrs*days_h/1000
-        Qls = leakv*rho*c_air*dTs*hrs*days_c/1000
-        Qtot=Qsw+Qss+Qvw+Qvs+Qlw+Qls
+        leakv = Cval * floor_area * wind_spd * lf / 100
+        Qlw = leakv * rho * c_air * dTw * hrs * days_h / 1000
+        Qls = leakv * rho * c_air * dTs * hrs * days_c / 1000
+        Qtot = Qsw + Qss + Qvw + Qvs + Qlw + Qls
 
         # 昼夜消費
-        Qday   = Qtot*(gen_h/24)
-        Qnight = Qtot-Qday
+        Qday   = Qtot * (gen_h / 24)
+        Qnight = Qtot - Qday
 
-        # 発電→自家消費→蓄電→夜間放電
-        gen    = sol_cap*gen_h*365
-        use_s  = min(gen, Qday)
-        surplus= gen - use_s
-        store  = min(surplus, bat_cap*bat_eff)
-        use_b  = min(store, Qnight)
-        sell   = surplus - store
-        buy_day   = max(Qday-use_s,0.0)
-        buy_night = max(Qnight-use_b,0.0)
-        buy_total = buy_day + buy_night
+        # 発電→自家消費→蓄電→夜間放電（修正：年間蓄電量を365倍）
+        gen = sol_cap * gen_h * 365
+        use_s = min(gen, Qday)
+        surplus = gen - use_s
+        # 蓄電池にためられる年間量 = 1日分の余剰を365日分 OR 容量×効率×365
+        store = min(surplus, bat_cap * bat_eff * 365)
+        use_b = min(store, Qnight)
+        sell = surplus - store
+        buy_day   = max(Qday - use_s, 0.0)
+        buy_night = max(Qnight - use_b, 0.0)
 
-        # 費用
+        # 費用計算
         cost_day   = buy_day   * day_rate
         cost_night = buy_night * night_rate
         revenue    = sell      * sell_rate
@@ -81,7 +85,7 @@ for idx, col in enumerate([col1, col2]):
             "年間消費[kWh]": Qtot,
             "発電量[kWh]": gen,
             "日中自家消費": use_s,
-            "蓄電量": store,
+            "年間蓄電量": store,
             "夜間放電": use_b,
             "買電 (昼)": buy_day,
             "買電 (夜)": buy_night,
@@ -96,13 +100,14 @@ df = pd.DataFrame(house_params).T.round(1)
 df["年間光熱費(円)"] = df["年間光熱費(円)"].apply(lambda x: f"{x:,} 円")
 st.dataframe(df, use_container_width=True)
 
-# 差額
-nms = list(costs.keys())
-if len(nms)==2:
-    d=costs[nms[1]]-costs[nms[0]]
-    if d>0:
-        st.success(f"💡 {nms[0]} が {int(d):,} 円/年 お得！")
-    elif d<0:
-        st.success(f"💡 {nms[1]} が {int(-d):,} 円/年 お得！")
+# 差額表示
+names = list(costs.keys())
+if len(names) == 2:
+    diff = costs[names[1]] - costs[names[0]]
+    if diff > 0:
+        st.success(f"💡 {names[0]} が {int(diff):,} 円/年 お得です！")
+    elif diff < 0:
+        st.success(f"💡 {names[1]} が {int(-diff):,} 円/年 お得です！")
     else:
         st.info("💡 両者同額です。")
+
