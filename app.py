@@ -44,7 +44,7 @@ for idx, col in enumerate([col1, col2]):
             step=0.1, key=f"C_{idx}"
         )
         wind_spd  = st.number_input(
-            f"[{name}] 平均風速 (m/s)", 0.0, 20.0, 2.0, step=0.1, key=f"wind_{idx}"
+            f"[{name}] 平均風速 (m/s)", 0.0, 20.0, 3.0, step=0.1, key=f"wind_{idx}"
         )
         dense     = st.selectbox(
             f"[{name}] 住宅密集地", ["はい", "いいえ"], key=f"dense_{idx}"
