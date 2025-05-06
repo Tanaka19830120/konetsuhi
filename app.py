@@ -30,7 +30,6 @@ for idx, col in enumerate([col1, col2]):
         )
         volume = floor_area * ceiling_height  # 容積 (m³)
 
-        # 熱損失パラメータ
         Ua = st.number_input(
             f"[{name}] Ua値 (W/m²K)",
             min_value=0.0,
@@ -136,86 +135,53 @@ for idx, col in enumerate([col1, col2]):
         specific_heat_air = 0.33
 
         # 1) 熱損失計算
-        Q_skin_winter = (
-            Ua * floor_area * deltaT_winter * hours_per_day * days_heating / 1000.0
-        )
-        Q_skin_summer = (
-            Ua * floor_area * deltaT_summer * hours_per_day * days_cooling / 1000.0
-        )
+        Q_skin_winter = Ua * floor_area * deltaT_winter * hours_per_day * days_heating / 1000
+        Q_skin_summer = Ua * floor_area * deltaT_summer * hours_per_day * days_cooling / 1000
         heat_loss_rate = 1 - heat_recovery_rate if ventilation_type == "第一種" else 1.0
         Q_vent_winter = (
-            ventilation_rate
-            * volume
-            * air_density
-            * specific_heat_air
-            * deltaT_winter
-            * heat_loss_rate
-            * hours_per_day
-            * days_heating
-            / 1000.0
+            ventilation_rate * volume * air_density * specific_heat_air *
+            deltaT_winter * heat_loss_rate * hours_per_day * days_heating / 1000
         )
         Q_vent_summer = (
-            ventilation_rate
-            * volume
-            * air_density
-            * specific_heat_air
-            * deltaT_summer
-            * heat_loss_rate
-            * hours_per_day
-            * days_cooling
-            / 1000.0
+            ventilation_rate * volume * air_density * specific_heat_air *
+            deltaT_summer * heat_loss_rate * hours_per_day * days_cooling / 1000
         )
         leak_factor = 0.5 if dense_area else 1.0
-        leakage_volume = C * floor_area * wind_speed * leak_factor / 100.0
-        Q_leak_winter = (
-            leakage_volume
-            * air_density
-            * specific_heat_air
-            * deltaT_winter
-            * hours_per_day
-            * days_heating
-            / 1000.0
-        )
-        Q_leak_summer = (
-            leakage_volume
-            * air_density
-            * specific_heat_air
-            * deltaT_summer
-            * hours_per_day
-            * days_cooling
-            / 1000.0
-        )
+        leakage_volume = C * floor_area * wind_speed * leak_factor / 100
+        Q_leak_winter = leakage_volume * air_density * specific_heat_air * deltaT_winter * hours_per_day * days_heating / 1000
+        Q_leak_summer = leakage_volume * air_density * specific_heat_air * deltaT_summer * hours_per_day * days_cooling / 1000
         Q_total = (
-            Q_skin_winter
-            + Q_skin_summer
-            + Q_vent_winter
-            + Q_vent_summer
-            + Q_leak_winter
-            + Q_leak_summer
+            Q_skin_winter + Q_skin_summer +
+            Q_vent_winter + Q_vent_summer +
+            Q_leak_winter + Q_leak_summer
         )
 
-        # 2) 発電・蓄電計算
-        solar_gen = solar_capacity * 3.5 * 365.0
-        battery_use = min(battery_capacity * battery_eff * 365.0, Q_total)
+        # 2) 発電・蓄電計算（修正）
+        solar_gen = solar_capacity * 3.5 * 365  # 年間発電量[kWh]
+        # 蓄電池から取り出せるのは「発電した合計」かつ「容量×効率」の小さい方
+        battery_use = min(solar_gen, battery_capacity * battery_eff)
+
         net_load = Q_total - solar_gen
         if net_load >= 0:
-            grid_purchase = max(net_load - battery_use, 0.0)
-            sell_back = 0.0
+            # 発電+蓄電量 <= Q_total の場合
+            grid_purchase = max(net_load - battery_use, 0)
+            sell_back = 0
         else:
             sell_back = abs(net_load)
-            grid_purchase = 0.0
+            grid_purchase = 0
 
         # 3) 光熱費計算
         cost_total = grid_purchase * electric_rate
         revenue = sell_back * electric_rate * 0.8
         net_cost = cost_total - revenue
 
-        # 結果格納
         house_params[name] = {
             "年間消費[kWh]": Q_total,
+            "年間発電量[kWh]": solar_gen,
+            "蓄電池放出[kWh]": battery_use,
             "買電量[kWh]": grid_purchase,
             "売電量[kWh]": sell_back,
-            "年間光熱費(円)": int(net_cost),
+            "年間光熱費(円)": int(net_cost)
         }
         costs[name] = net_cost
 
@@ -235,3 +201,4 @@ if len(names) == 2:
         st.success(f"💡 {names[1]} が {int(-diff):,} 円/年 お得です！")
     else:
         st.info("💡 両者同額です。")
+
