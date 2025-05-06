@@ -37,8 +37,8 @@ for idx, col in enumerate([col1, col2]):
         days_c    = st.number_input(f"[{name}] 冷房日数",0,365,90,step=1,key=f"dc_{idx}")
 
         # 太陽光・蓄電池
-        sol_cap = st.number_input(f"[{name}] 太陽光容量 (kW)",    min_value=0.0, max_value=100.0, value=0.0, step=0.1, key=f"sol_{idx}")
-        bat_cap = st.number_input(f"[{name}] 蓄電池容量 (kWh)",   min_value=0.0, max_value=1000.0, value=0.0, step=0.1, key=f"bat_{idx}")
+        sol_cap = st.number_input(f"[{name}] 太陽光容量 (kW)",    min_value=0.0, max_value=100.0, value=13.475, step=0.1, key=f"sol_{idx}")
+        bat_cap = st.number_input(f"[{name}] 蓄電池容量 (kWh)",   min_value=0.0, max_value=1000.0, value=7.04, step=0.1, key=f"bat_{idx}")
         bat_eff = st.slider(f"[{name}] 蓄電池効率 (%)",           min_value=0, max_value=100, value=90, key=f"beff_{idx}") / 100.0
 
         # 定数
