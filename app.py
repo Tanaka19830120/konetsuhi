@@ -30,7 +30,7 @@ for idx, col in enumerate([col1, col2]):
 
         # 熱損失関連
         Ua        = st.number_input(
-            f"[{name}] Ua値 (W/m²K)", 0.0, 10.0, (0.19 if idx == 0 else 0.87),
+            f"[{name}] Ua値 (W/m²K)", 0.0, 10.0, (0.26 if idx == 0 else 0.87),
             step=0.01, key=f"Ua_{idx}"
         )
         vent_type = st.selectbox(
