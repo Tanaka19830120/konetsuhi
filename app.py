@@ -93,7 +93,8 @@ for idx, col in enumerate([col1, col2]):
         Qvw = vent_rate * volume * rho * c_air * dTw * hlr * hrs * days_h / 1000
         Qvs = vent_rate * volume * rho * c_air * dTs * hlr * hrs * days_c / 1000
         lf  = 0.5 if dense else 1.0
-        leakv = Cval * floor_area * wind_spd * lf / 100
+        # 漏気量計算を修正 (cm²→m²、秒→時間の換算を含む)
+        leakv = Cval * floor_area * wind_spd * lf * 3600.0 / 10000.0  # m³/h
         Qlw  = leakv * rho * c_air * dTw * hrs * days_h / 1000
         Qls  = leakv * rho * c_air * dTs * hrs * days_c / 1000
         Qtot = Qsw + Qss + Qvw + Qvs + Qlw + Qls
@@ -147,3 +148,4 @@ if len(names) == 2:
         st.success(f"💡 {names[1]} が {int(-diff):,} 円/年 お得です！")
     else:
         st.info("💡 両者同額です。")
+
