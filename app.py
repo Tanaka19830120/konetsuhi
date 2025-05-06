@@ -13,7 +13,7 @@ for idx, col in enumerate([col1, col2]):
         name = "一条工務店" if idx == 0 else "その他の家"
         st.header(f"🏡 {name}")
         # 基本入力
-        floor_area = st.number_input(f"[{name}] 延床面積 (m²)", 120.0, key=f"floor_area_{idx}")
+        floor_area = st.number_input(f"[{name}] 延床面積 (m²)", 90.0, key=f"floor_area_{idx}")
         Ua = st.number_input(f"[{name}] Ua値 (W/m²K)", 0.19 if idx == 0 else 0.87, key=f"Ua_{idx}")
         volume = st.number_input(f"[{name}] 容積 (m³)", 288.0, key=f"volume_{idx}")
         ventilation_type = st.selectbox(f"[{name}] 換気方式", ["第一種", "第三種"], key=f"vent_type_{idx}")
