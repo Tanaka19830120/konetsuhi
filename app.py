@@ -16,7 +16,7 @@ costs = {}
 
 for idx, col in enumerate([col1, col2]):
     with col:
-        name = "一条工務店" if idx == 0 else "その他の家"
+        name = "一条工務店" if idx == 0 else "他の家"
         st.header(f"🏡 {name}")
 
         # 床面積と天井高さ
