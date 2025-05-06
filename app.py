@@ -40,7 +40,7 @@ for idx, col in enumerate([col1, col2]):
             f"[{name}] 熱交換率（第一種換気）", 0.0, 1.0, 0.75, key=f"rec_{idx}"
         )
         Cval      = st.number_input(
-            f"[{name}] C値 (cm²/m²)", 0.0, 100.0, (0.5 if idx == 0 else 2.0),
+            f"[{name}] C値 (cm²/m²)", 0.0, 100.0, (0.7 if idx == 0 else 2.0),
             step=0.1, key=f"C_{idx}"
         )
         wind_spd  = st.number_input(
